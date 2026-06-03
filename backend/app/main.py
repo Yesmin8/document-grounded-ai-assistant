@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, UploadFile
 
 from app.services.pdf_service import extract_text_from_pdf
+from app.services.chunking_service import chunk_text
 
 app = FastAPI(
     title="Document Grounded AI Assistant",
@@ -31,9 +32,11 @@ async def upload_document(
         buffer.write(content)
 
     extracted_text = extract_text_from_pdf(str(file_path))
+    chunks = chunk_text(extracted_text)
 
     return {
         "filename": file.filename,
         "characters": len(extracted_text),
-        "preview": extracted_text[:500]
+        "chunks": len(chunks),
+        "first_chunk": chunks[0]
     }
