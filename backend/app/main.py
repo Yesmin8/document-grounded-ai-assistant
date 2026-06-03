@@ -2,6 +2,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile
 
+from app.services.pdf_service import extract_text_from_pdf
+
 app = FastAPI(
     title="Document Grounded AI Assistant",
     version="1.0.0"
@@ -28,7 +30,10 @@ async def upload_document(
         content = await file.read()
         buffer.write(content)
 
+    extracted_text = extract_text_from_pdf(str(file_path))
+
     return {
         "filename": file.filename,
-        "status": "uploaded"
+        "characters": len(extracted_text),
+        "preview": extracted_text[:500]
     }
