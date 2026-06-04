@@ -5,6 +5,7 @@ from app.services.chunking_service import chunk_text
 from app.vectorstore.chroma_store import add_chunks
 from pydantic import BaseModel
 from app.vectorstore.chroma_store import search_chunks
+from app.services.llm_service import generate_answer
 
 app = FastAPI(
     title="Document Grounded AI Assistant",
@@ -70,21 +71,37 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/ask")
 async def ask_question(request: QuestionRequest):
+
     if not request.question.strip():
-        raise HTTPException(400, "La question ne peut pas être vide")
-    
-    documents = search_chunks(request.question)
+        raise HTTPException(
+            400,
+            "La question ne peut pas être vide"
+        )
+
+    documents = search_chunks(
+        request.question
+    )
 
     if not documents:
         return {
             "question": request.question,
-            "documents": [],
-            "message": "Aucun résultat trouvé"
+            "answer": "Aucun résultat trouvé",
+            "sources": []
         }
-    
+
+    context = "\n\n".join(
+        documents
+    )
+
+    answer = generate_answer(
+        request.question,
+        context
+    )
+
     return {
         "question": request.question,
-        "documents": documents
+        "answer": answer,
+        "sources": documents
     }
 
 
